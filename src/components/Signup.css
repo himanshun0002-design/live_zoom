@@ -1,0 +1,258 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+    background: linear-gradient(135deg, #6e8efb, #a777e3);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+
+.signup-container {
+    width: 100%;
+    max-width: 450px;
+}
+
+.signup-card {
+    background-color: rgba(255, 255, 255, 0.95);
+    border-radius: 20px;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+    padding: 40px 30px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.signup-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 6px;
+    background: linear-gradient(90deg, #6e8efb, #a777e3);
+}
+
+.app-logo {
+    margin-bottom: 25px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.logo-icon {
+    font-size: 36px;
+    color: #6e8efb;
+    margin-right: 12px;
+}
+
+.app-logo h1 {
+    font-size: 28px;
+    font-weight: 800;
+    background: linear-gradient(90deg, #6e8efb, #a777e3);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.signup-title {
+    font-size: 26px;
+    font-weight: 700;
+    color: #333;
+    margin-bottom: 8px;
+}
+
+.signup-subtitle {
+    font-size: 15px;
+    color: #666;
+    margin-bottom: 20px;
+}
+
+.error-message {
+    background: #ffdddd;
+    color: #d8000c;
+    padding: 10px 15px;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    font-size: 14px;
+}
+
+.signup-form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.input-group {
+    position: relative;
+}
+
+.signup-input {
+    width: 100%;
+    padding: 14px 16px 14px 45px;
+    border-radius: 50px;
+    border: 2px solid #e0e0e0;
+    outline: none;
+    font-size: 15px;
+    transition: all 0.3s ease;
+    background-color: #f9f9f9;
+}
+
+.signup-input:focus {
+    border-color: #6e8efb;
+    background-color: #fff;
+    box-shadow: 0 0 12px rgba(110, 142, 251, 0.3);
+}
+
+.input-icon {
+    position: absolute;
+    left: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #6e8efb;
+    font-size: 16px;
+}
+
+.signup-button {
+    width: 100%;
+    padding: 14px;
+    font-size: 16px;
+    font-weight: 600;
+    border-radius: 50px;
+    cursor: pointer;
+    border: none;
+    background: linear-gradient(90deg, #6e8efb, #a777e3);
+    color: white;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(110, 142, 251, 0.4);
+}
+
+.signup-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 7px 20px rgba(110, 142, 251, 0.6);
+}
+
+.signup-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.divider {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 20px 0;
+    font-size: 14px;
+    color: #777;
+}
+
+.divider::before,
+.divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background-color: #e0e0e0;
+}
+
+.social-signup {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.social-button {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px;
+    border-radius: 50px;
+    border: none;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    color: white;
+}
+
+.social-button.google {
+    background: #db4437;
+}
+
+.social-button.google:hover {
+    background: #c23321;
+}
+
+.social-button.facebook {
+    background: #4267b2;
+}
+
+.social-button.facebook:hover {
+    background: #365899;
+}
+
+.login-link {
+    font-size: 14px;
+    color: #666;
+}
+
+.link-button {
+    background: none;
+    border: none;
+    color: #6e8efb;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    padding: 0;
+    margin: 0;
+}
+
+.link-button:hover {
+    color: #a777e3;
+    text-decoration: underline;
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+    .signup-card {
+        padding: 30px 20px;
+    }
+
+    .logo-icon {
+        font-size: 30px;
+    }
+
+    .app-logo h1 {
+        font-size: 24px;
+    }
+
+    .signup-title {
+        font-size: 22px;
+    }
+
+    .signup-subtitle {
+        font-size: 14px;
+    }
+
+    .signup-input {
+        padding: 12px 14px 12px 40px;
+        font-size: 14px;
+    }
+
+    .input-icon {
+        font-size: 14px;
+        left: 12px;
+    }
+
+    .signup-button {
+        padding: 12px;
+        font-size: 15px;
+    }
+}

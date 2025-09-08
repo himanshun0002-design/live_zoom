@@ -21,7 +21,7 @@ function Header({ navigate }) {
                 <button className="btn btn-outline" onClick={() => navigate('/login')}>
                     Sign In
                 </button>
-                <button className="btn btn-primary" onClick={() => alert('Redirect to Sign Up')}>
+                <button className="btn btn-primary" onClick={() => navigate('/signup')}>
                     Sign Up
                 </button>
             </div>
