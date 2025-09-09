@@ -7,7 +7,7 @@ function RoomJoin() {
     const { roomId: urlRoomId } = useParams();
     const navigate = useNavigate();
     const videoRef = useRef();
-    
+
     const [roomId, setRoomId] = useState(urlRoomId || "");
     const [inRoom, setInRoom] = useState(false);
     const [currentRoomId, setCurrentRoomId] = useState("");
@@ -16,18 +16,20 @@ function RoomJoin() {
     const [devices, setDevices] = useState({ audio: [], video: [] });
     const [selectedDevices, setSelectedDevices] = useState({ audio: "", video: "" });
     const [stream, setStream] = useState(null);
-    const [isMuted, setIsMuted] = useState(false);
-    const [isVideoOff, setIsVideoOff] = useState(false);
+    const [isMuted, setIsMuted] = useState(true);
+    const [isVideoOff, setIsVideoOff] = useState(true);
 
-    const initializeStream = useCallback(async () => {
+    const initializeStream = useCallback(async (withAudio = false, withVideo = false) => {
         try {
             if (stream) {
                 stream.getTracks().forEach(track => track.stop());
             }
 
+            if (!withAudio && !withVideo) return null;
+
             const mediaStream = await navigator.mediaDevices.getUserMedia({
-                audio: selectedDevices.audio ? { deviceId: { exact: selectedDevices.audio } } : true,
-                video: selectedDevices.video ? { deviceId: { exact: selectedDevices.video } } : true
+                audio: withAudio ? (selectedDevices.audio ? { deviceId: { exact: selectedDevices.audio } } : true) : false,
+                video: withVideo ? (selectedDevices.video ? { deviceId: { exact: selectedDevices.video } } : true) : false
             });
 
             setStream(mediaStream);
@@ -37,7 +39,7 @@ function RoomJoin() {
             console.error("Error accessing media:", err);
             return null;
         }
-    }, [stream, selectedDevices]);
+    }, [selectedDevices.audio, selectedDevices.video, stream]);
 
     const generateRoomId = useCallback(() => {
         const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -49,32 +51,24 @@ function RoomJoin() {
         return id;
     }, []);
 
-    const joinRoom = useCallback(async () => {
+    const joinRoom = useCallback(() => {
         if (!roomId.trim()) {
             setError("Please enter a Room ID");
             return;
         }
 
-        setLoading(true);
-        setError("");
-
-        try {
-            const mediaStream = await initializeStream();
-            if (!mediaStream) {
-                setLoading(false);
-                return;
+        navigate(`/MeetingRoom`, {
+            state: {
+                roomId: roomId,
+                userId: generateRandomId(),  // You can define a function to generate a unique ID
+                userName: prompt("Enter your name") || "Anonymous"
             }
+        });
+    }, [roomId, navigate]);
 
-            setCurrentRoomId(roomId);
-            setInRoom(true);
-            navigate(`/room/${roomId}`, { replace: true });
-        } catch (err) {
-            setError("Failed to join room. Please try again.");
-            console.error("Error joining room:", err);
-        } finally {
-            setLoading(false);
-        }
-    }, [roomId, navigate, initializeStream]);
+    function generateRandomId() {
+        return Math.random().toString(36).substr(2, 9);
+    }
 
     const createRoom = useCallback(async () => {
         const newRoomId = generateRoomId();
@@ -89,29 +83,41 @@ function RoomJoin() {
         }
         setRoomId("");
         setInRoom(false);
+        setIsMuted(true);
+        setIsVideoOff(true);
         setError("");
         navigate("/");
     }, [stream, navigate]);
 
-    const toggleMute = useCallback(() => {
-        if (stream) {
-            const audioTrack = stream.getAudioTracks()[0];
-            if (audioTrack) {
-                audioTrack.enabled = !audioTrack.enabled;
-                setIsMuted(!audioTrack.enabled);
+    const toggleMute = useCallback(async () => {
+        if (isMuted) {
+            const mediaStream = await initializeStream(true, !isVideoOff);
+            if (mediaStream) {
+                setIsMuted(false);
+                setIsVideoOff(mediaStream.getVideoTracks().length === 0);
             }
+        } else {
+            if (stream) {
+                stream.getAudioTracks().forEach(track => track.enabled = false);
+            }
+            setIsMuted(true);
         }
-    }, [stream]);
+    }, [isMuted, isVideoOff, initializeStream, stream]);
 
-    const toggleVideo = useCallback(() => {
-        if (stream) {
-            const videoTrack = stream.getVideoTracks()[0];
-            if (videoTrack) {
-                videoTrack.enabled = !videoTrack.enabled;
-                setIsVideoOff(!videoTrack.enabled);
+    const toggleVideo = useCallback(async () => {
+        if (isVideoOff) {
+            const mediaStream = await initializeStream(!isMuted, true);
+            if (mediaStream) {
+                setIsVideoOff(false);
+                setIsMuted(mediaStream.getAudioTracks().length === 0);
             }
+        } else {
+            if (stream) {
+                stream.getVideoTracks().forEach(track => track.enabled = false);
+            }
+            setIsVideoOff(true);
         }
-    }, [stream]);
+    }, [isVideoOff, isMuted, initializeStream, stream]);
 
     useEffect(() => {
         const getDevices = async () => {
@@ -151,12 +157,7 @@ function RoomJoin() {
             {error && <div className="error-message">{error}</div>}
 
             <div className="video-preview">
-                <video
-                    ref={videoRef}
-                    autoPlay
-                    playsInline
-                    muted
-                />
+                <video ref={videoRef} autoPlay playsInline muted />
             </div>
 
             <div className="device-controls">
@@ -189,14 +190,14 @@ function RoomJoin() {
 
             <div className="control-buttons">
                 <button
-                    className={`control-button ${isMuted ? "active" : ""}`}
+                    className={`control-button ${!isMuted ? "active" : ""}`}
                     onClick={toggleMute}
                     title={isMuted ? "Unmute" : "Mute"}
                 >
                     {isMuted ? <FaMicrophoneSlash /> : <FaMicrophone />}
                 </button>
                 <button
-                    className={`control-button ${isVideoOff ? "active" : ""}`}
+                    className={`control-button ${!isVideoOff ? "active" : ""}`}
                     onClick={toggleVideo}
                     title={isVideoOff ? "Start Video" : "Stop Video"}
                 >

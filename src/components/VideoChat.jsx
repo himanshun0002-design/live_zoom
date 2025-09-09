@@ -7,21 +7,24 @@ const socket = io('http://localhost:8000', { transports: ['websocket'] });
 function VideoChat({ roomId }) {
     const localVideoRef = useRef(null);
     const [remoteStreams, setRemoteStreams] = useState([]);
+    const [stream, setStream] = useState(null);
+    const [isMuted, setIsMuted] = useState(false);
+    const [isVideoOff, setIsVideoOff] = useState(false);
     const peerConnections = useRef({}); // Track multiple peers
 
     useEffect(() => {
-        // Get user media
-        navigator.mediaDevices.getUserMedia({ video: true, audio: true })
-            .then(stream => {
-                localVideoRef.current.srcObject = stream;
+        const init = async () => {
+            try {
+                const mediaStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                setStream(mediaStream);
+                localVideoRef.current.srcObject = mediaStream;
 
                 socket.emit('join-room', roomId);
 
                 socket.on('user-joined', userId => {
-                    const pc = createPeerConnection(userId, stream);
+                    const pc = createPeerConnection(userId, mediaStream);
                     peerConnections.current[userId] = pc;
 
-                    // Create offer
                     pc.createOffer()
                         .then(offer => pc.setLocalDescription(offer))
                         .then(() => {
@@ -30,7 +33,7 @@ function VideoChat({ roomId }) {
                 });
 
                 socket.on('offer', async ({ offer, from }) => {
-                    const pc = createPeerConnection(from, stream);
+                    const pc = createPeerConnection(from, mediaStream);
                     peerConnections.current[from] = pc;
 
                     await pc.setRemoteDescription(offer);
@@ -57,32 +60,33 @@ function VideoChat({ roomId }) {
                         setRemoteStreams(prev => prev.filter(s => s.userId !== userId));
                     }
                 });
-            });
+            } catch (err) {
+                console.error('Error accessing media devices:', err);
+            }
+        };
 
-        // Cleanup on unmount
+        init();
+
         return () => {
+            stream?.getTracks().forEach(track => track.stop());
             Object.values(peerConnections.current).forEach(pc => pc.close());
             socket.disconnect();
         };
     }, [roomId]);
 
-    function createPeerConnection(userId, stream) {
+    function createPeerConnection(userId, mediaStream) {
         const pc = new RTCPeerConnection();
 
-        // Add tracks
-        stream.getTracks().forEach(track => pc.addTrack(track, stream));
+        mediaStream.getTracks().forEach(track => pc.addTrack(track, mediaStream));
 
-        // ICE candidates
         pc.onicecandidate = event => {
             if (event.candidate) {
                 socket.emit('ice-candidate', { candidate: event.candidate, to: userId });
             }
         };
 
-        // Remote tracks
         pc.ontrack = event => {
             setRemoteStreams(prev => {
-                // Avoid duplicates
                 if (!prev.some(s => s.userId === userId)) {
                     return [...prev, { userId, stream: event.streams[0] }];
                 }
@@ -93,12 +97,42 @@ function VideoChat({ roomId }) {
         return pc;
     }
 
+    const toggleMute = () => {
+        if (stream) {
+            const audioTrack = stream.getAudioTracks()[0];
+            if (audioTrack) {
+                audioTrack.enabled = !audioTrack.enabled;
+                setIsMuted(!audioTrack.enabled);
+            }
+        }
+    };
+
+    const toggleVideo = () => {
+        if (stream) {
+            const videoTrack = stream.getVideoTracks()[0];
+            if (videoTrack) {
+                videoTrack.enabled = !videoTrack.enabled;
+                setIsVideoOff(!videoTrack.enabled);
+            }
+        }
+    };
+
     return (
         <div className="video-chat-wrapper">
             <div className="local-video">
                 <video ref={localVideoRef} autoPlay muted playsInline />
                 <span>You</span>
             </div>
+
+            <div className="controls">
+                <button className={`control-btn ${isMuted ? 'active' : ''}`} onClick={toggleMute}>
+                    {isMuted ? 'Unmute Mic' : 'Mute Mic'}
+                </button>
+                <button className={`control-btn ${isVideoOff ? 'active' : ''}`} onClick={toggleVideo}>
+                    {isVideoOff ? 'Turn Camera On' : 'Turn Camera Off'}
+                </button>
+            </div>
+
             <div className="remote-videos">
                 {remoteStreams.map(r => (
                     <div className="remote-video" key={r.userId}>
